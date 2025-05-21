@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Projekt-Tagger</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+</head>
+<body>
+  <h3>Projektnummer eingeben</h3>
+  <input type="text" id="projectInput" placeholder="z.B. 1234-ABC" />
+  <button onclick="submitProject()">Senden & Weiter</button>
+  <script>
+    async function submitProject() {
+      const project = document.getElementById("projectInput").value.trim();
+      if (!project) { alert("Bitte Projektnummer eingeben."); return; }
+      const item = Office.context.mailbox.item;
+      item.body.getAsync("text", function(bodyResult) {
+        const subject = item.subject || "";
+        const to = (item.to || []).map(e => e.emailAddress).join(", ");
+        const timestamp = new Date().toISOString();
+        fetch("https://n8n.deinedomain.ch/webhook/projekt-tagger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: "Gesendete E-Mail",
+            date: timestamp.split("T")[0],
+            time: timestamp.split("T")[1],
+            recipient: to,
+            subject: subject,
+            project: project
+          })
+        }).finally(() => {
+          Office.context.ui.messageParent("done");
+        });
+      });
+    }
+  </script>
+</body>
+</html>
